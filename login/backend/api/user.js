@@ -1,21 +1,16 @@
 const express = require('express');
-const router = express.Router();
-
-
-// password handler
 const bcrypt = require('bcrypt');
 
-const register = async (req, res) => {
-  let { name, email, password, confirmPassword } = req.body;
-  name = name.trim();
+exports.signup = async (req, res) => {
+  let { username, email, password, confirmPassword } = req.body;
+  username = username.trim();
   email = email.trim();
   password = password.trim();
   confirmPassword = confirmPassword.trim();
 
-  // Validate input
-  if (name === "" || email === "" || password === "" || confirmPassword === "") {
+  if (username === "" || email === "" || password === "" || confirmPassword === "") {
     return res.json({ status: "FAILED", message: "Empty input fields!" });
-  } else if (!/^[a-zA-Z ]*$/.test(name)) {
+  } else if (!/^[a-zA-Z ]*$/.test(username)) {
     return res.json({ status: "FAILED", message: "Invalid name entered" });
   } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
     return res.json({ status: "FAILED", message: "Invalid email entered" });
@@ -36,18 +31,16 @@ const register = async (req, res) => {
     // Password handling
     const saltRounds = 10;
     bcrypt.hash(password, saltRounds).then(async (hashedPassword) => {
-      await userRef.set({ name, email, password: hashedPassword });
+      await userRef.set({ username, email, password: hashedPassword });
       res.json({ status: "SUCCESS", message: "Signup successful" });
     });
 
   } catch (err) {
     res.json({ status: "FAILED", message: "Error occurred while checking or saving user" });
   }
-};
+}
 
-
-// 
-const login = async (req, res) => {
+exports.signin = async (req, res) => {
   let { email, password } = req.body;
   email = email.trim();
   password = password.trim();
@@ -80,5 +73,61 @@ const login = async (req, res) => {
   }
 };
 
+exports.getAllusers = async (req, res) => {
+  try {
+    const snapshot = await firestore.collection('users').get();
+    let data = [];
+    snapshot.forEach(doc => data.push(doc.data()));
+    res.json({ status: "SUCCESS", data });
+  } catch (err) {
+    res.json({ status: "FAILED", message: "An error occurred while fetching user data" });
+  }
+}
 
-module.exports = { register, login };
+exports.getUsersById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const doc = await firestore.collection('users').doc(id).get();
+    if (!doc.exists) {
+      return res.json({ status: "FAILED", message: "User with the provided ID does not exist" });
+    }
+    res.json({ status: "SUCCESS", data: doc.data() });
+  } catch (err) {
+    res.json({ status: "FAILED", message: "An error occurred while fetching user data" });
+  }
+}
+
+exports.editUsersById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const doc = await firestore.collection('users').doc(id).get();
+    if (!doc.exists) {
+      return res.json({ status: "FAILED", message: "User with the provided ID does not exist" });
+    }
+    const { username, email, password } = req.body;
+    const data = { username, email, password };
+    await firestore.collection('users').doc(id).set(data);
+    res.json({ status: "SUCCESS", message: "User updated successfully" });
+  } catch (err) {
+    res.json({ status: "FAILED", message: "An error occurred while updating user data" });
+  }
+}
+
+exports.deleteUsersById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const doc = await firestore.collection('users').doc(id).get();
+    if (!doc.exists) {
+      return res.json({ status: "FAILED", message: "User with the provided ID does not exist" });
+    }
+    await firestore.collection('users').doc(id).delete();
+    res.json({ status: "SUCCESS", message: "User deleted successfully" });
+  } catch (err) {
+    res.json({ status: "FAILED", message: "An error occurred while deleting user data" });
+  }
+}
+
+exports.signout = (req, res) => {
+  res.json({ status: "SUCCESS", message: "Signout successful" });
+}
+
