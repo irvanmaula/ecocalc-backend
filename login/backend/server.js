@@ -1,31 +1,43 @@
 require('dotenv').config();
-const express = require('express');
-const FireStore = require('@google-cloud/firestore');
 
+const admin = require('firebase-admin');
+const express = require('express');
 const app = express();
+
+
+const serviceAccount = require('./serviceAccountKey.json');
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    projectId: process.env.PROJECT_ID
+});
+
 app.use(express.json());
 
-const db = new FireStore({
-    projectId: process.env.PROJECT_ID,
-    keyFileName: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+app.use(express.urlencoded({ extended: true }));
+
+const db = admin.firestore();
+
+app.get('/', async (req, res) => {
+    const snapshot = await db.collection('test').get();
+    let data = [];
+    snapshot.forEach(doc => data.push(doc.data()));
+    res.send(data);
 });
 
-app.get('/test-connection', async (req, res) => {
-    try {
-        const collections = await db.listCollections(); // Cek koleksi Firestore
-        const collectionNames = collections.map((col) => col.id);
-        res.status(200).send(`Connected to Firestore. Collections: ${collectionNames.join(', ')}`);
-    } catch (error) {
-        res.status(500).send(`Error connecting to Firestore: ${error.message}`);
-    }
-});
+db.collection('test').limit(1).get()
+    .then(snapshot => {
+        if (snapshot.empty) {
+            console.log('Koneksi berhasil, tetapi koleksi "test" kosong.');
+        } else {
+            console.log('Koneksi berhasil dan koleksi "test" ditemukan.');
+        }
+    })
+    .catch(error => {
+        console.error('Gagal terhubung ke Firestore:', error);
+    });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
 
-// Test route
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-});
+
+
+const PORT = 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
