@@ -1,26 +1,20 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "start": " nodemon server.js"
+    "start": "node app.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "body-parser": "^1.20.3",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "firebase": "^11.0.2",
     "firebase-admin": "^13.0.1",
-    "firebase-function": "^1.4.121",
-    "firebase-tools": "^13.27.0",
-    "google-auth-library": "^9.15.0",
-    "googleapis": "^144.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "tools": "^0.0.0"
+    "userland": "^0.4.3"
   },
   "description": ""
 }

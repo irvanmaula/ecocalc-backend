@@ -71,6 +71,10 @@ exports.signin = async (req, res) => {
   }
 };
 
+exports.testConnection = async (req, res) => {
+  res.status(200).send("Backend Successfully Connected !!");
+}
+
 exports.getAllusers = async (req, res) => {
   try {
     const snapshot = await firestore.collection('users').get();
