@@ -22,6 +22,5 @@ const db = admin.firestore();
 app.use('/', authRoutes);
 
 
-const HOST = '0.0.0.0';
-const PORT = process.env.PORT || 8080;
-app.listen(PORT,HOST, () => console.log(`Server running on http://${HOST}:${PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
