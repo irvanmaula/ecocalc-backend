@@ -16,25 +16,41 @@ exports.signUp = async (req, res) => {
     return res.status(400).json({ status: "FAILED", message: "Invalid userName entered" });
   } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
     return res.status(400).json({ status: "FAILED", message: "Invalid email entered" });
-  } else if (confirmPassword !== password) {
-    return res.status(400).json({ status: "FAILED", message: "Password confirmation mismatch" });
   } else if (password.length < 8) {
     return res.status(400).json({ status: "FAILED", message: "Password must be at least 8 characters!" });
+  } else if (confirmPassword !== password) {
+    return res.status(400).json({ status: "FAILED", message: "Password confirmation mismatch" });
   }
+  
 
   try {
-    const userRef = firestore.collection('users').doc(email);
-    const doc = await userRef.get();
+    const snapshot = await firestore.collection('users').where( 'email', '==', email).get();
 
-    if (doc.exists) {
+    if (!snapshot.empty) {
       return res.status(400).json({ status: "FAILED", message: "User with the provided email already exists" });
     }
 
     // Password handling
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    await userRef.set({ userName, email, password: hashedPassword });
-    res.status(201).json({ status: "SUCCESS", message: "SignUp successfull" });
+
+    const userRef = await firestore.collection('users').add({
+      userName,
+      email,
+      password: hashedPassword,
+    })
+
+    
+
+    res.status(201).json({ 
+      status: "SUCCESS",
+      message: "SignUp successfull",
+      data: {
+        userId: userRef.id,
+        userName,
+        email,
+      }
+    });
 
   } catch (err) {
     console.error(err);
@@ -52,17 +68,26 @@ exports.signIn = async (req, res) => {
   }
 
   try {
-    const userRef = firestore.collection('users').doc(email);
-    const doc = await userRef.get();
+    const snapshot =await firestore.collection('users').where('email', '==', email).get();
 
-    if (!doc.exists) {
+    if (snapshot.empty) {
       return res.status(400).json({ status: "FAILED", message: "User Not Found" });
     }
 
-    const hashedPassword = doc.data().password;
-    const validPassword = await bcrypt.compare(password, hashedPassword);
+    // Get user
+    const userRef = snapshot.docs[0];
+    const userData = userRef.data();
+
+    const validPassword = await bcrypt.compare(password, userData.password);
     if (validPassword) {
-      res.status(200).json({ status: "SUCCESS", message: "SignIn successfull", data: doc.data() });
+      res.status(200).json({
+        status: "SUCCESS",
+        message: "SignIn successfull",
+        data:{ 
+          userId: userRef.id,
+          userName: userData.userName,
+          email: userData.email
+         } });
     } else {
       res.status(400).json({ status: "FAILED", message: "Invalid password entered!" });
     }
@@ -78,8 +103,15 @@ exports.testConnection = async (req, res) => {
 exports.getAllusers = async (req, res) => {
   try {
     const snapshot = await firestore.collection('users').get();
-    let data = [];
-    snapshot.forEach(doc => data.push(doc.data()));
+    const data = [];
+    snapshot.forEach(doc => {
+      const user = doc.data();
+      data.push({
+        userId: doc.id,
+        userName: user.userName,
+        email: user.email
+      })
+    });
     res.status(200).json({ status: "SUCCESS", data });
   } catch (err) {
     res.status(500).json({ status: "FAILED", message: "An error occurred while fetching user data" });
@@ -93,7 +125,11 @@ exports.getUsersById = async (req, res) => {
     if (!doc.exists) {
       return res.status(404).json({ status: "FAILED", message: "User not found" });
     }
-    res.status(200).json({ status: "SUCCESS", data: doc.data() });
+    res.status(200).json({ status: "SUCCESS", data: {
+      userId: doc.id,
+      userName: doc.data().userName,
+      email: doc.data().email
+    } });
   } catch (err) {
     res.status(500).json({ status: "FAILED", message: "An error occurred while fetching user data" });
   }
@@ -105,7 +141,7 @@ exports.updateUsersById = async (req, res) => {
     const userRef = await firestore.collection('users').doc(id);
     const doc = await userRef.get();
 
-    // Cek apakah user ada
+    // check user
     if (!doc.exists) {
       return res.status(404).json({ status: "FAILED", message: "User not found" });
     }
@@ -117,14 +153,18 @@ exports.updateUsersById = async (req, res) => {
       return res.status(200).json({
         status: "SUCCESS",
         message: "Existing user data retrieved for editing",
-        data: existingData,
+        data: {
+          userId: doc.id,
+          userName: existingData.userName,
+          email: existingData.email
+        },
       });
     }
 
     const { userName, email, password } = req.body;
 
-    // Data baru untuk diperbarui
-    const updatedData = { ...existingData }; // Salin data lama
+    // update data
+    const updatedData = { ...existingData }; // copy existing data
 
     if (userName !== undefined) updatedData.userName = userName;
     if (email !== undefined) updatedData.email = email;
@@ -133,13 +173,17 @@ exports.updateUsersById = async (req, res) => {
       updatedData.password = await bcrypt.hash(password, saltRounds);
     }
 
-    // Update data di Firestore dengan merge
+    // Update data in Firestore
     await userRef.set(updatedData, { merge: true });
 
     res.status(200).json({
       status: "SUCCESS",
       message: "User updated successfully",
-      data: updatedData,
+      data: {
+        userId: doc.id,
+        userName: updatedData.userName,
+        email: updatedData.email,
+      },
     });
   } catch (err) {
     res.status(500).json({ status: "FAILED", message: "An error occurred while updating user data" });
