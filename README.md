@@ -72,12 +72,14 @@ This API allows for CRUD operations on the users collection. Each user document 
     "error": "Invalid email entered"
   }
   - **400 Bad Request**: input fileds email must match the password.
+  ```
 
   ```json
   {
     "error": "Password confirmation mismatch"
   }
   - **400 Bad Request**: input fileds password must be at least 8 characters.
+  ```
 
   ```json
   {
