@@ -37,6 +37,7 @@ This API allows for CRUD operations on the users collection. Each user document 
   "userName": "string", // required, name of the user
   "email": "string", //required, email of the user
   "password": "string", //required, password of the user
+  "confirmPassword": "string" //required must be same with the password
 }
 ```
 
@@ -157,7 +158,7 @@ This API allows for CRUD operations on the users collection. Each user document 
   {
     "userName": "string",
     "email": "string",
-    "password": "string" (password that has been encrypted)
+    "userId": "string" 
   }
   ```
 
@@ -213,7 +214,7 @@ This API allows for CRUD operations on the users collection. Each user document 
 - Parameters : `userId` (string): Unique identifier of the user to delete.
 - Response :
 
-  - **200 OK**: User updated successfully.
+  - **200 OK**: User deleted successfully.
 
   ```json
   {
@@ -242,13 +243,12 @@ This API allows for CRUD operations on the users collection. Each user document 
   ```json
   [
     {
-      "id": "string",          // userId from Firestore document ID
+      "userId": "string",          // userId from Firestore document ID
       "userName": "string",
       "email": "string",
-      "passeord": "string"
     },
     {
-      "id": "string",          // userId from Firestore document ID
+      "userId": "string",          // userId from Firestore document ID
       "userName": "string",
       "email": "string",
       "passeord": "string"
