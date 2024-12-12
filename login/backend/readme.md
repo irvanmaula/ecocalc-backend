@@ -12,7 +12,7 @@ This API allows for CRUD operations on the users collection. Each user document 
 - `password` (string): password of the user.
 - `confirmPassword` (string): confirmPassword of the user.
 
-### Base URL : `/users`
+### Base URL : `/`
 
 ### Authentication
 
@@ -30,8 +30,6 @@ This API allows for CRUD operations on the users collection. Each user document 
 
 - URL : `/signup`
 - Method : `POST`
-- Description : Creates a new user document in the `users` collection.
-- Request Header : `Authorization: Bearer <idToken>`, `Content-type: application/json`
 - Request Body :
 
 ```json
@@ -74,12 +72,14 @@ This API allows for CRUD operations on the users collection. Each user document 
     "error": "Invalid email entered"
   }
   - **400 Bad Request**: input fileds email must match the password.
+  ```
 
   ```json
   {
     "error": "Password confirmation mismatch"
   }
   - **400 Bad Request**: input fileds password must be at least 8 characters.
+  ```
 
   ```json
   {
